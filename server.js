@@ -6,6 +6,7 @@ import path from "path";
 import fs from "fs";
 import { exec } from "child_process";
 import { addUsers, getUsers } from "./db.js";
+import { hashPass } from "./utils/passhash.js";
 
 const port = 8000;
 
@@ -55,7 +56,7 @@ app.get("/", async function (req, res) {
 
 app.post("/signup", async (req, res) => {
   const email = req.body.email;
-  const pass = req.body.pass;
+  const pass = await hashPass(req.body.pass);
   console.log(email, pass);
   const result = await addUsers(email, pass);
   switch (result) {
