@@ -90,7 +90,18 @@ app.post("/login", async function (req, res) {
   res.json(result);
 });
 
-app.post("/upload", upload.single("file"), function (req, res) {});
+app.post("/upload", upload.single("file"), function (req, res) {
+  const filePath = req.file.path;
+
+  console.log(` filePath: ${filePath}\n `);
+  res.json({ msg: "file uploaded", error: 0 });
+
+  // if (!fs.existsSync(outputPath)) {
+  //   fs.mkdirSync(outputPath, { recursive: true });
+  // }
+  //
+  // exec();
+});
 
 app.listen(port, function () {
   console.log(`server is listening at port ${port}...`);
