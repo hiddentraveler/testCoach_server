@@ -1,0 +1,12 @@
+step 01: Make sure you have "python3" installed
+step 02: Open cmd in you project's root directory
+step 03: Run "cd utils\python\OMRChecker" to change directory
+step 04: Run "python -m venv venv" to create python virtual environment
+step 05: Run "venv\Scripts\activate.bat" to activate the virtual environment
+step 06: Make sure you are inside venv("(venv)" shown at terminal)
+step 07: Run the following commands:
+					"python -m pip install --upgrade pip"
+					"python -m pip install opencv-python"
+					"python -m pip install opencv-contrib-python"
+step 08: Run "python -m pip install -r requirements.txt" to install all the others packages
+step 09: Close cmd and you are good to use the python utility.

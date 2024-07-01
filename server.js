@@ -25,26 +25,22 @@ app.get("/", (req, res, next) => {
 
 // python script will be executed here
 const runPythonScript = () => {
+	console.log("Running python script...");
 	let options = {
-		mode: "json",
+		pythonPath: "utils/python/OMRChecker/venv/Scripts/python.exe",
+		mode: "text",
 		pythonOptions: ["-u"], // get print results in real-time
-		scriptPath: "python/", //If you are having python_test.py script in same folder, then it's optional.
-		args: [{ name: "Manab", age: 24 }], //An argument which can be accessed in the script using sys.argv[1]
+		scriptPath: "utils/python/OMRChecker", //If you are having python_test.py script in same folder, then it's optional.
+		args: ["-i", "utils/python/storage/inputs/", "-o", "utils/python/storage/outputs/"], //An argument which can be accessed in the script using sys.argv[1]
 	};
 
-	let pyshell = new PythonShell("script.py", options);
+	let pyshell = new PythonShell("main.py", options);
 
 	// sends a message to the Python script via stdin
-	pyshell.send({ name: "Manab", age: 24 });
+	// pyshell.send({ name: "Manab", age: 24 });
 
 	pyshell.on("message", function (message) {
-		// received a message sent from the Python script (a simple "print" statement)
-		if (message.type == "data") {
-			console.log("Data:", message.data);
-		}
-		if (message.type == "log") {
-			console.log("Log:", message.data);
-		}
+		console.log("[Python]", message);
 	});
 
 	// end the input stream and allow the process to exit
