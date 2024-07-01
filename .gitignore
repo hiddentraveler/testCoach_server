@@ -24,3 +24,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# excluding storage folder's content
+storage/*
+# excluding uploads folder's content
+uploads/*
