@@ -29,3 +29,5 @@ dist-ssr
 storage/*
 # excluding uploads folder's content
 uploads/*
+# python env 
+venv/
