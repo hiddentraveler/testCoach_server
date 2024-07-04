@@ -54,3 +54,103 @@ export async function addUsers(email, pass) {
     conn.end();
   }
 }
+
+export async function setTest(teacherid, testname, ansArr) {
+  let conn;
+  conn = await pool.getConnection();
+  const testid = faker.string.nanoid(10);
+  let answers = { ans: ansArr };
+  try {
+    const result = await conn.query(
+      "INSERT INTO testpublic (testid,teacherid,testname,ans) VALUES (?,?,?,?)",
+      [testid, teacherid, testname, answers],
+    );
+    console.log("in db_create", result);
+    return 0;
+  } catch (e) {
+    console.log("error in db_create:", e.errno);
+    console.log(e);
+    return "error in inserting the data";
+  } finally {
+    conn.end();
+  }
+}
+
+export async function getTestPublic(testid) {
+  let conn;
+  conn = await pool.getConnection();
+  try {
+    const result = await conn.query(
+      `SELECT * FROM testpublic WHERE testid='${testid}'`,
+    );
+    console.log("available public test:", result);
+    return result[0].ans.ans;
+  } catch (e) {
+    console.log("error in db_create:", e.errno);
+    console.log(e);
+    return "error in inserting the data";
+  } finally {
+    conn.end();
+  }
+}
+
+export async function submitTestPublic(
+  userid,
+  testid,
+  testname,
+  responseJson,
+  totalque,
+  wrong,
+  correct,
+) {
+  let conn;
+  conn = await pool.getConnection();
+
+  const responses = JSON.stringify(responseJson);
+  try {
+    const result = await conn.query(
+      "INSERT INTO testpubsub (testid,userid,testname,responses,totalque,wrong,correct) VALUES (?,?,?,?,?,?,?)",
+      [testid, userid, testname, responses, totalque, wrong, correct],
+    );
+    console.log("in db_create", result);
+    return 0;
+  } catch (e) {
+    console.log(e);
+    console.log("error in db_create:", e.errno);
+    return "error in inserting the data";
+  } finally {
+    conn.end();
+  }
+}
+
+export async function submitTestPrivate(
+  userid,
+  testname,
+  responseJson,
+  ansArr,
+  wrong,
+  correct,
+) {
+  let conn;
+  conn = await pool.getConnection();
+  let answers = { ans: ansArr };
+  const totalque = ansArr.length;
+  const testid = faker.string.nanoid(10);
+
+  const responses = JSON.stringify(responseJson);
+  answers = JSON.stringify(answers);
+  try {
+    const result = await conn.query(
+      "INSERT INTO testprivate (testid,userid,testname,responses,answers,totalque,wrong,correct) VALUES (?,?,?,?,?,?,?,?)",
+      [testid, userid, testname, responses, answers, totalque, wrong, correct],
+    );
+    console.log("in db_create", result);
+    return 0;
+  } catch (e) {
+    console.log(e);
+    console.log("error in db_create:", e.errno);
+    return "error in inserting the data";
+  } finally {
+    conn.end();
+  }
+}
