@@ -1,5 +1,5 @@
 create table testpubsub(
-  testid varchar(20) unique not null primary key,
+  testid varchar(20) not null,
   userid varchar(20),
   testname varchar(255),
   responses json,
