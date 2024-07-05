@@ -76,6 +76,40 @@ export async function setTest(teacherid, testname, ansArr) {
   }
 }
 
+export async function getTestPrivate(userid) {
+  let conn;
+  conn = await pool.getConnection();
+  try {
+    const result = await conn.query(
+      `SELECT * FROM testprivate WHERE userid='${userid}'`,
+    );
+    console.log("available public test:", result);
+    return result;
+  } catch (e) {
+    console.log("error in db_create:", e.errno);
+    console.log(e);
+    return "error in inserting the data";
+  } finally {
+    conn.end();
+  }
+}
+
+export async function getTestPublicAll() {
+  let conn;
+  conn = await pool.getConnection();
+  try {
+    const result = await conn.query(`SELECT * FROM testpublic `);
+    console.log("available public test:", result);
+    return result;
+  } catch (e) {
+    console.log("error in db_create:", e.errno);
+    console.log(e);
+    return "error in inserting the data";
+  } finally {
+    conn.end();
+  }
+}
+
 export async function getTestPublic(testid) {
   let conn;
   conn = await pool.getConnection();
@@ -84,7 +118,7 @@ export async function getTestPublic(testid) {
       `SELECT * FROM testpublic WHERE testid='${testid}'`,
     );
     console.log("available public test:", result);
-    return result[0].ans.ans;
+    return result;
   } catch (e) {
     console.log("error in db_create:", e.errno);
     console.log(e);

@@ -12,6 +12,8 @@ import {
   setTest,
   submitTestPublic,
   submitTestPrivate,
+  getTestPrivate,
+  getTestPublicAll,
 } from "./db.js";
 import { hashPass } from "./utils/passhash.js";
 import { PythonShell } from "python-shell";
@@ -54,8 +56,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
 app.get("/", async function (req, res) {
-  const result = { msg: "hello", error: 0 };
-  res.json(result);
+  const userid = req.body.userid;
+  let resultPrivate;
+  if (userid) {
+    resultPrivate = await getTestPrivate(userid);
+  }
+  const resultPublic = await getTestPublicAll();
+  res.json({ testPublic: resultPublic, testprivate: resultPrivate });
 });
 
 app.post("/signup", async (req, res) => {
@@ -194,7 +201,8 @@ async function resultSubmitPublic(filePath, testid, userid, testname) {
   const responseJson = csvConvert(filePath);
   console.log("file path is ", filePath);
   console.log(responseJson.ans);
-  const ansArr = await getTestPublic(testid);
+  const testAnsJson = await getTestPublic(testid);
+  const ansArr = testAnsJson[0].ans.ans;
   const totalque = ansArr.length;
   console.log(ansArr.length);
   let correct = 0;
