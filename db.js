@@ -188,3 +188,20 @@ export async function submitTestPrivate(
     conn.end();
   }
 }
+
+export async function dashboard(userid) {
+  let conn;
+  conn = await pool.getConnection();
+  try {
+    const result = conn.query(`SELECT *
+FROM testpubsub
+WHERE testid IN 
+(select testid from testpublic where teacherid='${userid}')`);
+    return result;
+  } catch (e) {
+    console.log(e);
+    return "error in getting dashboard data";
+  } finally {
+    conn.end;
+  }
+}

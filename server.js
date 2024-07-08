@@ -1,6 +1,6 @@
 //Import express.js module and create its variable.
 import express from "express";
-import { getTestPrivate, getTestPublicAll } from "./db.js";
+import { dashboard, getTestPrivate, getTestPublicAll } from "./db.js";
 import authRouter from "./routes/auth.js";
 import testRouter from "./routes/tests.js";
 
@@ -31,6 +31,13 @@ app.get("/", async function (req, res) {
   }
   const resultPublic = await getTestPublicAll();
   res.json({ testPublic: resultPublic, testprivate: resultPrivate });
+});
+
+app.get("/dashboard", async function (req, res) {
+  const userid = req.body.userid;
+  const result = await dashboard(userid);
+  console.log(result);
+  res.json({ all: result });
 });
 
 app.listen(port, function () {
