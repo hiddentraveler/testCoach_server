@@ -6,9 +6,10 @@ const router = Router();
 
 router.post("/signup", async (req, res) => {
   const email = req.body.email;
+  const username = req.body.username;
   const pass = await hashPass(req.body.pass);
   console.log(email, pass);
-  const result = await addUsers(email, pass);
+  const result = await addUsers(email, username, pass);
   switch (result) {
     case 0:
       res.json({ msg: "user created", error: 0 });

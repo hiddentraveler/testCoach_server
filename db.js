@@ -29,10 +29,9 @@ export async function getUsers(email_id, pass) {
   }
 }
 
-export async function addUsers(email, pass) {
+export async function addUsers(email, username, pass) {
   let conn;
   conn = await pool.getConnection();
-  const username = faker.internet.userName();
   const id = faker.string.nanoid(10);
   try {
     const result = await conn.query(
