@@ -105,6 +105,7 @@ async function resultSubmitPrivate(filePath, userid, testname, ansArr) {
     return out;
   }
 
+  let totalque = 0;
   let correct = 0;
   let wrong = 0;
   let unattempted = 0;
@@ -112,21 +113,33 @@ async function resultSubmitPrivate(filePath, userid, testname, ansArr) {
   for (let i = 0; i < ansArr.length; i++) {
     let answer = ansArr[i];
     let response = convertLetterToNumber(responseJson.res[i]);
-    if (typeof answer !== "number" && typeof response !== "number") {
-      console.log(`Error while evaluating response(${response}) and answer(${answer})`);
+    if (typeof answer !== "number" || typeof response !== "number") {
+      console.log(`Exception while evaluating response(${response}) and answer(${answer})`);
     } else if (response === answer) {
+      totalque++;
       correct++;
     } else if (response === 0) {
+      totalque++;
       unattempted++;
     } else {
+      totalque++;
       wrong++;
     }
   }
+  console.log(`total questions: ${totalque}`);
   console.log(`correct: ${correct}`);
   console.log(`wrong: ${wrong}`);
   console.log(`unattempted: ${unattempted}`);
   console.log(testname);
-  const result = await submitTestPrivate(userid, testname, responseJson, ansArr, correct, wrong);
+  const result = await submitTestPrivate(
+    userid,
+    testname,
+    responseJson,
+    ansArr,
+    totalque,
+    correct,
+    wrong
+  );
   console.log(result);
 }
 

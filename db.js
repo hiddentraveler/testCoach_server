@@ -154,11 +154,18 @@ export async function submitTestPublic(
   }
 }
 
-export async function submitTestPrivate(userid, testname, responseJson, ansArr, wrong, correct) {
+export async function submitTestPrivate(
+  userid,
+  testname,
+  responseJson,
+  ansArr,
+  totalque,
+  wrong,
+  correct
+) {
   let conn;
   conn = await pool.getConnection();
   let answers = { ans: ansArr };
-  const totalque = ansArr.length;
   const testid = faker.string.nanoid(10);
 
   const responses = JSON.stringify(responseJson);
