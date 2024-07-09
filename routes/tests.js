@@ -8,12 +8,7 @@ import path from "path";
 import fse from "fs-extra";
 import { Router } from "express";
 
-import {
-  getTestPublic,
-  setTest,
-  submitTestPublic,
-  submitTestPrivate,
-} from ".././db.js";
+import { getTestPublic, setTest, submitTestPublic, submitTestPrivate } from ".././db.js";
 
 const router = Router();
 
@@ -32,7 +27,7 @@ router.use(
   cors({
     origin: ["http://localhost:3000", "http://localhost:5173"],
     credentials: true,
-  }),
+  })
 );
 
 router.post("/upload", upload.single("file"), function (req, res) {
@@ -41,7 +36,8 @@ router.post("/upload", upload.single("file"), function (req, res) {
   const testname = req.body.testname;
   const userid = req.body.userid;
   const testpublic = req.body.testpublic;
-  const ansArr = req.body.ansarr;
+  const ansArr = JSON.parse(req.body.ansarr);
+
   console.log("testpublic", testpublic);
   const testid = req.body.testid;
   console.log(`File(${fileName}) uploaded to ${filePath}`);
@@ -49,15 +45,7 @@ router.post("/upload", upload.single("file"), function (req, res) {
   res.json({ msg: "file uploaded", error: 0 });
 
   // processing the uploaded file further
-  processUploadedFile(
-    fileName,
-    filePath,
-    testid,
-    testpublic,
-    userid,
-    testname,
-    ansArr,
-  );
+  processUploadedFile(fileName, filePath, testid, testpublic, userid, testname, ansArr);
 });
 
 router.post("/settest", async function (req, res) {
@@ -65,18 +53,11 @@ router.post("/settest", async function (req, res) {
   const teacherid = req.body.teacherid;
   const ansArr = req.body.ansArr;
   const result = await setTest(teacherid, testname, ansArr);
+  console.log();
   res.json(result);
 });
 
-const processUploadedFile = (
-  fileName,
-  URI,
-  testid,
-  testpublic,
-  userid,
-  testname,
-  ansArr,
-) => {
+const processUploadedFile = (fileName, URI, testid, testpublic, userid, testname, ansArr) => {
   console.log("processing file: " + URI);
 
   // TODO: logic to check if its a valid image
@@ -99,15 +80,7 @@ const processUploadedFile = (
 
         console.log("Starting processing results");
         // process the results from the python script
-        processResults(
-          fileName,
-          URI,
-          testid,
-          testpublic,
-          userid,
-          testname,
-          ansArr,
-        );
+        processResults(fileName, URI, testid, testpublic, userid, testname, ansArr);
       })
       .catch((err) => {
         console.error(err);
@@ -118,41 +91,49 @@ const processUploadedFile = (
 };
 
 async function resultSubmitPrivate(filePath, userid, testname, ansArr) {
-  console.log("ans array length", ansArr);
+  console.log("results.csv file path is ", filePath);
   const responseJson = csvConvert(filePath, ansArr);
-  console.log("file path is ", filePath);
-  console.log(responseJson.ans);
-  console.log(ansArr.length);
+
+  function convertLetterToNumber(str) {
+    const start = 96; // "a".charCodeAt(0) - 1
+    const len = str.length;
+    const out = [...str.toLowerCase()].reduce((out, char, pos) => {
+      const val = char.charCodeAt(0) - start;
+      const pow = Math.pow(26, len - pos - 1);
+      return out + val * pow;
+    }, 0);
+    return out;
+  }
+
   let correct = 0;
   let wrong = 0;
+  let unattempted = 0;
+
   for (let i = 0; i < ansArr.length; i++) {
-    if (ansArr[i] === responseJson.ans[i]) {
+    let answer = ansArr[i];
+    let response = convertLetterToNumber(responseJson.res[i]);
+    if (typeof answer !== "number" && typeof response !== "number") {
+      console.log(`Error while evaluating response(${response}) and answer(${answer})`);
+    } else if (response === answer) {
       correct++;
-    } else if (
-      responseJson.ans[i] !== ansArr[i] &&
-      responseJson.ans[i] !== ""
-    ) {
+    } else if (response === 0) {
+      unattempted++;
+    } else {
       wrong++;
     }
   }
   console.log(`correct: ${correct}`);
   console.log(`wrong: ${wrong}`);
+  console.log(`unattempted: ${unattempted}`);
   console.log(testname);
-  const result = await submitTestPrivate(
-    userid,
-    testname,
-    responseJson,
-    ansArr,
-    correct,
-    wrong,
-  );
+  const result = await submitTestPrivate(userid, testname, responseJson, ansArr, correct, wrong);
   console.log(result);
 }
 
 async function resultSubmitPublic(filePath, testid, userid, testname) {
   const responseJson = csvConvert(filePath);
   console.log("file path is ", filePath);
-  console.log(responseJson.ans);
+  console.log(responseJson);
   const testAnsJson = await getTestPublic(testid);
   const ansArr = testAnsJson[0].ans.ans;
   const totalque = ansArr.length;
@@ -162,10 +143,7 @@ async function resultSubmitPublic(filePath, testid, userid, testname) {
   for (let i = 0; i < ansArr.length; i++) {
     if (ansArr[i] === responseJson.ans[i]) {
       correct++;
-    } else if (
-      responseJson.ans[i] !== ansArr[i] &&
-      responseJson.ans[i] !== ""
-    ) {
+    } else if (responseJson.ans[i] !== ansArr[i] && responseJson.ans[i] !== "") {
       wrong++;
     }
   }
@@ -179,20 +157,12 @@ async function resultSubmitPublic(filePath, testid, userid, testname) {
     responseJson,
     totalque,
     correct,
-    wrong,
+    wrong
   );
   console.log(result);
 }
 
-const processResults = (
-  fileName,
-  URI,
-  testid,
-  testpublic,
-  userid,
-  testname,
-  ansArr,
-) => {
+const processResults = (fileName, URI, testid, testpublic, userid, testname, ansArr) => {
   console.log("processing results");
   // making omr storage folder with the name of the image by faker
   let omrResultStoragePath = "./storage/" + path.parse(URI).name;
@@ -213,9 +183,7 @@ const processResults = (
   destPath = omrResultStoragePath + "/checkedOMR.jpg";
   try {
     fse.moveSync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
-    console.log(
-      "successfully moved checkedOMR from " + srcPath + " to " + destPath,
-    );
+    console.log("successfully moved checkedOMR from " + srcPath + " to " + destPath);
   } catch (err) {
     console.error(err);
   }
@@ -227,14 +195,9 @@ const processResults = (
     const files = fse.readdirSync(directoryPath);
     if (!Array.isArray(files)) {
       console.log(files);
-      return console.error(
-        "Expected files to be an array, but got:",
-        typeof files,
-      );
+      return console.error("Expected files to be an array, but got:", typeof files);
     }
-    const csvFiles = files.filter(
-      (file) => path.extname(file).toLowerCase() === ".csv",
-    );
+    const csvFiles = files.filter((file) => path.extname(file).toLowerCase() === ".csv");
     console.log("CSV files:", csvFiles);
 
     // TODO: need proper way to select the latest csv file
@@ -248,9 +211,7 @@ const processResults = (
   destPath = omrResultStoragePath + "/result.csv";
   try {
     fse.moveSync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
-    console.log(
-      "successfully moved results.csv from " + srcPath + " to " + destPath,
-    );
+    console.log("successfully moved results.csv from " + srcPath + " to " + destPath);
   } catch (err) {
     console.error(err);
   }
@@ -270,12 +231,7 @@ const runPythonScript = () => {
       mode: "text",
       pythonOptions: ["-u"], // get print results in real-time
       scriptPath: "utils/python/OMRChecker", //If you are having python_test.py script in same folder, then it's optional.
-      args: [
-        "-i",
-        "utils/python/storage/inputs/",
-        "-o",
-        "utils/python/storage/outputs/",
-      ], //An argument which can be accessed in the script using sys.argv[1]
+      args: ["-i", "utils/python/storage/inputs/", "-o", "utils/python/storage/outputs/"], //An argument which can be accessed in the script using sys.argv[1]
     };
 
     let pyshell = new PythonShell("main.py", options);
