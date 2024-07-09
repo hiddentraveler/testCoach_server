@@ -41,6 +41,7 @@ router.post("/upload", upload.single("file"), function (req, res) {
   const testname = req.body.testname;
   const userid = req.body.userid;
   const testpublic = req.body.testpublic;
+  const ansArr = req.body.ansarr;
   console.log("testpublic", testpublic);
   const testid = req.body.testid;
   console.log(`File(${fileName}) uploaded to ${filePath}`);
@@ -48,7 +49,15 @@ router.post("/upload", upload.single("file"), function (req, res) {
   res.json({ msg: "file uploaded", error: 0 });
 
   // processing the uploaded file further
-  processUploadedFile(fileName, filePath, testid, testpublic, userid, testname);
+  processUploadedFile(
+    fileName,
+    filePath,
+    testid,
+    testpublic,
+    userid,
+    testname,
+    ansArr,
+  );
 });
 
 router.post("/settest", async function (req, res) {
@@ -66,6 +75,7 @@ const processUploadedFile = (
   testpublic,
   userid,
   testname,
+  ansArr,
 ) => {
   console.log("processing file: " + URI);
 
@@ -89,7 +99,15 @@ const processUploadedFile = (
 
         console.log("Starting processing results");
         // process the results from the python script
-        processResults(fileName, URI, testid, testpublic, userid, testname);
+        processResults(
+          fileName,
+          URI,
+          testid,
+          testpublic,
+          userid,
+          testname,
+          ansArr,
+        );
       })
       .catch((err) => {
         console.error(err);
@@ -99,11 +117,11 @@ const processUploadedFile = (
   }
 };
 
-async function resultSubmitPrivate(filePath, userid, testname) {
-  const responseJson = csvConvert(filePath);
+async function resultSubmitPrivate(filePath, userid, testname, ansArr) {
+  console.log("ans array length", ansArr);
+  const responseJson = csvConvert(filePath, ansArr);
   console.log("file path is ", filePath);
   console.log(responseJson.ans);
-  const ansArr = [];
   console.log(ansArr.length);
   let correct = 0;
   let wrong = 0;
@@ -173,6 +191,7 @@ const processResults = (
   testpublic,
   userid,
   testname,
+  ansArr,
 ) => {
   console.log("processing results");
   // making omr storage folder with the name of the image by faker
@@ -238,7 +257,7 @@ const processResults = (
   if (testpublic == "true") {
     resultSubmitPublic(destPath, testid, userid, testname);
   } else if (testpublic == "false") {
-    resultSubmitPrivate(destPath, userid, testname);
+    resultSubmitPrivate(destPath, userid, testname, ansArr);
   }
 };
 

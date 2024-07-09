@@ -1,13 +1,12 @@
 import fs from "fs";
 
-export function csvConvert(filePath) {
+export function csvConvert(filePath, ansArr) {
   try {
     const data = fs.readFileSync(filePath, "UTF-8").toString();
 
     const lines = data.split("\n");
 
     const queArr = [];
-    const ansArr = [];
 
     const ques = lines[0].split(",");
     ques.shift();
