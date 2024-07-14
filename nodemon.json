@@ -1,0 +1,6 @@
+{
+  "ignore": [
+    "./utils/python/storage/inputs/*",
+    "./utils/python/storage/outputs/*"
+  ]
+}
