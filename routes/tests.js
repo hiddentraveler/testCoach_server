@@ -83,17 +83,27 @@ const processUploadedFile = (
 
   // TODO: logic to check if its a valid image
 
-  // TODO: cleanup the python OMR processing folders
-
-  // copy image to the python OMR input folder
-  let srcPath = URI;
-  let destPath = "./utils/python/storage/inputs/" + fileName;
   try {
-    fse.copySync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
-    console.log("successfully copy file from " + srcPath + " to " + destPath);
+    let tempImgFolderName = path.parse(URI).name;
 
-    // run the python script
-    runPythonScript()
+    // copy image to the python OMR input folder
+    let srcPath = URI;
+    let destPath = "./utils/python/storage/inputs/" + tempImgFolderName + "/" + fileName;
+    // create temp folder in input directory and image
+    fse.copySync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
+    console.log("successfully copy image file from " + srcPath + " to " + destPath);
+
+
+    srcPath = "./utils/python/storage/template"
+    destPath = "./utils/python/storage/inputs/" + tempImgFolderName
+    // copy template files to newly created temp folder
+    fse.copySync(srcPath, destPath)
+    console.log("successfully copy template files from " + srcPath + " to " + destPath);
+
+    // run the python script with the temp folder name
+    let inputPath = destPath
+    let outputPath = "./utils/python/storage/outputs/" + tempImgFolderName
+    runPythonScript(inputPath, outputPath)
       .then(() => {
         console.log("Python Script Executed Successfully");
 
@@ -219,12 +229,15 @@ const processResults = (
   ansArr,
 ) => {
   console.log("processing results");
-  // making omr storage folder with the name of the image by faker
-  let omrResultStoragePath = "./storage/" + path.parse(URI).name;
-  fse.ensureDirSync(omrResultStoragePath);
+  let tempImgFolderName = path.parse(URI).name;
+  // making omr results storage folder with the name of the image by faker
+  let omrResultStoragePath = "./storage/" + tempImgFolderName
+  fse.ensureDirSync(omrResultStoragePath); // create omrResultStoragePath if it doesn't exist
 
-  // move omr to the storage folder
-  let srcPath = "./utils/python/storage/inputs/" + fileName;
+  let tempOMRInputPath = "./utils/python/storage/inputs/" + tempImgFolderName
+  let tempOMROutputPath = "./utils/python/storage/outputs/" + tempImgFolderName
+  // move omr to the results storage folder
+  let srcPath = tempOMRInputPath + "/" + fileName;
   let destPath = omrResultStoragePath + "/OMR.jpg";
   try {
     fse.moveSync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
@@ -234,7 +247,7 @@ const processResults = (
   }
 
   // move checkedOMR to the storage folder
-  srcPath = "./utils/python/storage/outputs/CheckedOMRs/" + fileName;
+  srcPath = tempOMROutputPath + "/CheckedOMRs/" + fileName;
   destPath = omrResultStoragePath + "/checkedOMR.jpg";
   try {
     fse.moveSync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
@@ -247,7 +260,7 @@ const processResults = (
 
   // find all the csv files in the output/Results folder
   let resultsFileName = "";
-  let directoryPath = "./utils/python/storage/outputs/Results";
+  let directoryPath = tempOMROutputPath + "/Results";
   try {
     const files = fse.readdirSync(directoryPath);
     if (!Array.isArray(files)) {
@@ -269,7 +282,7 @@ const processResults = (
   }
 
   // move results.csv to the storage folder
-  srcPath = "./utils/python/storage/outputs/Results/" + resultsFileName;
+  srcPath = tempOMROutputPath + "/Results/" + resultsFileName;
   destPath = omrResultStoragePath + "/result.csv";
   try {
     fse.moveSync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
@@ -279,6 +292,12 @@ const processResults = (
   } catch (err) {
     console.error(err);
   }
+
+  // Deleting temp input and output folders
+  fse.removeSync(tempOMRInputPath);
+  fse.removeSync(tempOMROutputPath);
+  console.log("OMR Processing Temp Folders Deleted at directories:", tempOMRInputPath + "and" + tempOMROutputPath);
+
   if (testpublic == "true") {
     resultSubmitPublic(destPath, testid, userid, testname);
   } else if (testpublic == "false") {
@@ -287,7 +306,7 @@ const processResults = (
 };
 
 // python script will be executed here
-const runPythonScript = () => {
+const runPythonScript = (inputPath = "utils/python/storage/inputs/", outputPath = "utils/python/storage/outputs/") => {
   return new Promise((resolve, reject) => {
     console.log("Running python script...");
     let options = {
@@ -295,12 +314,7 @@ const runPythonScript = () => {
       mode: "text",
       pythonOptions: ["-u"], // get print results in real-time
       scriptPath: "utils/python/OMRChecker", //If you are having python_test.py script in same folder, then it's optional.
-      args: [
-        "-i",
-        "utils/python/storage/inputs/",
-        "-o",
-        "utils/python/storage/outputs/",
-      ], //An argument which can be accessed in the script using sys.argv[1]
+      args: ["-i", inputPath, "-o", outputPath], //An argument which can be accessed in the script using sys.argv[1]
     };
 
     let pyshell = new PythonShell("main.py", options);
