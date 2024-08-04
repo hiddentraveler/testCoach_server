@@ -34,12 +34,10 @@ export async function addUsers(email, username, pass) {
   conn = await pool.getConnection();
   const id = faker.string.nanoid(10);
   try {
-    const result = await conn.query("INSERT INTO users (id,email,pass,username) VALUES (?,?,?,?)", [
-      id,
-      email,
-      pass,
-      username,
-    ]);
+    const result = await conn.query(
+      "INSERT INTO users (id,email,pass,username) VALUES (?,?,?,?)",
+      [id, email, pass, username],
+    );
     console.log("in db_create", result);
     return 0;
   } catch (e) {
@@ -64,7 +62,7 @@ export async function setTest(teacherid, testname, ansArr) {
   try {
     const result = await conn.query(
       "INSERT INTO testpublic (testid,teacherid,testname,ans) VALUES (?,?,?,?)",
-      [testid, teacherid, testname, answers]
+      [testid, teacherid, testname, answers],
     );
     console.log("in db_create", result);
     return 0;
@@ -81,7 +79,9 @@ export async function getTestPrivate(userid) {
   let conn;
   conn = await pool.getConnection();
   try {
-    const result = await conn.query(`SELECT * FROM testprivate WHERE userid='${userid}'`);
+    const result = await conn.query(
+      `SELECT * FROM testprivate WHERE userid='${userid}'`,
+    );
     console.log("available public test:", result);
     return result;
   } catch (e) {
@@ -113,7 +113,9 @@ export async function getTestPublic(testid) {
   let conn;
   conn = await pool.getConnection();
   try {
-    const result = await conn.query(`SELECT * FROM testpublic WHERE testid='${testid}'`);
+    const result = await conn.query(
+      `SELECT * FROM testpublic WHERE testid='${testid}'`,
+    );
     console.log("available public test:", result);
     return result;
   } catch (e) {
@@ -132,7 +134,7 @@ export async function submitTestPublic(
   responseJson,
   totalque,
   wrong,
-  correct
+  correct,
 ) {
   let conn;
   conn = await pool.getConnection();
@@ -141,7 +143,7 @@ export async function submitTestPublic(
   try {
     const result = await conn.query(
       "INSERT INTO testpubsub (testid,userid,testname,responses,totalque,wrong,correct) VALUES (?,?,?,?,?,?,?)",
-      [testid, userid, testname, responses, totalque, wrong, correct]
+      [testid, userid, testname, responses, totalque, wrong, correct],
     );
     console.log("in db_create", result);
     return 0;
@@ -161,7 +163,7 @@ export async function submitTestPrivate(
   ansArr,
   totalque,
   wrong,
-  correct
+  correct,
 ) {
   let conn;
   conn = await pool.getConnection();
@@ -173,7 +175,7 @@ export async function submitTestPrivate(
   try {
     const result = await conn.query(
       "INSERT INTO testprivate (testid,userid,testname,responses,answers,totalque,wrong,correct) VALUES (?,?,?,?,?,?,?,?)",
-      [testid, userid, testname, responses, answers, totalque, wrong, correct]
+      [testid, userid, testname, responses, answers, totalque, wrong, correct],
     );
     console.log("in db_create", result);
     return 0;
