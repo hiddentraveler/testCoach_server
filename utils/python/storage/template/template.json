@@ -18,13 +18,13 @@
     }
   ],
   "customLabels": {
-    "Booklet_No": ["b1..7"]
+    "Reg_No": ["b1..6"]
   },
   "fieldBlocks": {
-    "Booklet_No": {
+    "Reg_No": {
       "fieldType": "QTYPE_INT",
       "origin": [120, 518],
-      "fieldLabels": ["b1..7"],
+      "fieldLabels": ["b1..6"],
       "emptyValue": "no",
       "bubblesGap": 26.5,
       "labelsGap": 28

@@ -1,6 +1,8 @@
 {
   "ignore": [
     "./utils/python/storage/inputs/*",
-    "./utils/python/storage/outputs/*"
+    "./utils/python/storage/outputs/*",
+    "./utils/python/storage/BULK_OMR_INPUT/*",
+    "./utils/python/storage/BULK_OMR_OUTPUT/*"
   ]
 }

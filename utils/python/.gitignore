@@ -1,3 +1,5 @@
 # Everything in storage
 storage/inputs/*
 storage/outputs/*
+storage/BULK_OMR_INPUT/*
+storage/BULK_OMR_OUTPUT/*
