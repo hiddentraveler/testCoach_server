@@ -19,7 +19,7 @@ const app = express();
 // });
 
 app.use(express.json());
-app.use(cors())
+app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(authRouter);
 app.use(testRouter);
@@ -31,8 +31,9 @@ app.get("/", async function (req, res) {
   if (userid) {
     resultPrivate = await getTestPrivate(userid);
   }
-  const resultPublic = await getTestPublicAll();
-  res.json({ testPublic: resultPublic, testprivate: resultPrivate });
+  // const resultPublic = await getTestPublicAll();
+  // res.json({ testPublic: resultPublic, testprivate: resultPrivate });
+  res.json({ testprivate: resultPrivate });
 });
 
 app.get("/dashboard", async function (req, res) {
