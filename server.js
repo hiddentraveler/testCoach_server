@@ -25,8 +25,9 @@ app.use(authRouter);
 app.use(testRouter);
 app.use("/uploads", express.static("uploads"));
 
-app.get("/", async function (req, res) {
+app.post("/", async function (req, res) {
   const userid = req.body.userid;
+  console.log(req);
   let resultPrivate;
   if (userid) {
     resultPrivate = await getTestPrivate(userid);
