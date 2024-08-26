@@ -54,6 +54,23 @@ export async function addUsers(email, username, pass) {
   }
 }
 
+export async function delTest(testid) {
+  let conn;
+  conn = await pool.getConnection();
+  try {
+    const result = await conn.query(
+      `DELETE FROM testprivate WHERE testid='${testid}'`,
+    );
+    console.log("in db_create", result);
+    return 0;
+  } catch (e) {
+    console.log("error in db_create:", e.errno);
+    return "error in deleting the test";
+  } finally {
+    conn.end();
+  }
+}
+
 export async function setTest(teacherid, testname, ansArr) {
   let conn;
   conn = await pool.getConnection();

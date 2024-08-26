@@ -7,15 +7,16 @@ import { faker } from "@faker-js/faker";
 import path from "path";
 import fse from "fs-extra";
 import { Router } from "express";
-import { createReadStream } from 'fs';
-import csv from 'csv-parser';
-import { createObjectCsvWriter } from 'csv-writer';
+import { createReadStream } from "fs";
+import csv from "csv-parser";
+import { createObjectCsvWriter } from "csv-writer";
 
 import {
   getTestPublic,
   setTest,
   submitTestPublic,
   submitTestPrivate,
+  delTest,
 } from ".././db.js";
 
 const router = Router();
@@ -28,7 +29,6 @@ const storage = multer.diskStorage({
     cb(null, faker.string.nanoid(10) + path.extname(file.originalname));
   },
 });
-
 
 const upload = multer({ storage: storage });
 
@@ -65,25 +65,38 @@ router.post("/upload", upload.single("file"), function (req, res) {
   );
 });
 
-router.post("/bulkeval", upload.fields([{ name: "inputs" }, { name: "csv", maxCount: 1 }]), async (req, res) => {
-  const uploadedImages = req.files["inputs"];
-  const uploadedAnswerKey = req.files["csv"][0]
-  console.log(uploadedAnswerKey);
-
-  // processing the uploaded file further
-  try {
-    const resultCSVFilePath = await processBulkEvaluation(uploadedImages, uploadedAnswerKey);
-
-    if (resultCSVFilePath !== "") {
-      res.download(resultCSVFilePath)
-    } else {
-      res.status(500).send('Error in evaluation');
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).send('Error processing files');
-  }
+router.post("/api/delete", async function (req, res) {
+  const testid = req.body.testid;
+  const result = await delTest(testid);
+  res.json({ msg: result });
 });
+
+router.post(
+  "/bulkeval",
+  upload.fields([{ name: "inputs" }, { name: "csv", maxCount: 1 }]),
+  async (req, res) => {
+    const uploadedImages = req.files["inputs"];
+    const uploadedAnswerKey = req.files["csv"][0];
+    console.log(uploadedAnswerKey);
+
+    // processing the uploaded file further
+    try {
+      const resultCSVFilePath = await processBulkEvaluation(
+        uploadedImages,
+        uploadedAnswerKey,
+      );
+
+      if (resultCSVFilePath !== "") {
+        res.download(resultCSVFilePath);
+      } else {
+        res.status(500).send("Error in evaluation");
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).send("Error processing files");
+    }
+  },
+);
 
 const processUploadedFile = (
   fileName,
@@ -157,46 +170,61 @@ const processBulkEvaluation = async (files, uploadedAnswerKey) => {
     fse.removeSync("./utils/python/storage/" + bulk_omr_input_folder_name);
     fse.removeSync("./utils/python/storage/" + bulk_omr_output_folder_name);
     console.log("successfully removed bulk input and output folders");
-
   }
   removeBulkInputOutputFolders();
 
   try {
-    files.forEach(file => {
+    files.forEach((file) => {
       // move image to the python OMR input folder
       let srcPath = file.path;
-      let destPath = "./utils/python/storage/" + bulk_omr_input_folder_name + "/" + file.filename;
+      let destPath =
+        "./utils/python/storage/" +
+        bulk_omr_input_folder_name +
+        "/" +
+        file.filename;
       fse.moveSync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
-      console.log("successfully moved image file from " + srcPath + " to " + destPath);
+      console.log(
+        "successfully moved image file from " + srcPath + " to " + destPath,
+      );
     });
 
     // copy answer_key.csv to bulk_omr_input_folder
     let srcPath = uploadedAnswerKey.path;
-    let destPath = "./utils/python/storage/" + bulk_omr_input_folder_name + "/answer_key.csv";
+    let destPath =
+      "./utils/python/storage/" +
+      bulk_omr_input_folder_name +
+      "/answer_key.csv";
     fse.copySync(srcPath, destPath, { overwrite: true }); // overwrite if already exists
-    console.log("successfully copy answer_key.csv from " + srcPath + " to " + destPath);
+    console.log(
+      "successfully copy answer_key.csv from " + srcPath + " to " + destPath,
+    );
 
     // copy template files to bulk_omr_input_folder
     srcPath = "./utils/python/storage/template";
     destPath = "./utils/python/storage/" + bulk_omr_input_folder_name;
     fse.copySync(srcPath, destPath);
-    console.log("successfully copy template files from " + srcPath + " to " + destPath);
+    console.log(
+      "successfully copy template files from " + srcPath + " to " + destPath,
+    );
 
     // generate evaluate.json in bulk_omr_input_folder
-    let evaluateJsonPath = "./utils/python/storage/" + bulk_omr_input_folder_name + "/evaluation.json";
+    let evaluateJsonPath =
+      "./utils/python/storage/" +
+      bulk_omr_input_folder_name +
+      "/evaluation.json";
     let evaluateJsonData = {
-      "source_type": "csv",
-      "options": {
-        "answer_key_csv_path": "answer_key.csv",
-        "should_explain_scoring": true
+      source_type: "csv",
+      options: {
+        answer_key_csv_path: "answer_key.csv",
+        should_explain_scoring: true,
       },
-      "marking_schemes": {
-        "DEFAULT": {
-          "correct": "1",
-          "incorrect": "0",
-          "unmarked": "0"
-        }
-      }
+      marking_schemes: {
+        DEFAULT: {
+          correct: "1",
+          incorrect: "0",
+          unmarked: "0",
+        },
+      },
     };
     fse.writeJsonSync(evaluateJsonPath, evaluateJsonData, { spaces: 2 });
 
@@ -207,11 +235,11 @@ const processBulkEvaluation = async (files, uploadedAnswerKey) => {
 
     console.log("Python Script Executed Successfully");
 
-
     // TODO: filter the result csv and send the results to the frontend
     // find all the csv files in the output/Results folder
     let resultsFileName = "";
-    let directoryPath = "./utils/python/storage/" + bulk_omr_output_folder_name + "/Results";
+    let directoryPath =
+      "./utils/python/storage/" + bulk_omr_output_folder_name + "/Results";
     try {
       const files = fse.readdirSync(directoryPath);
       if (!Array.isArray(files)) {
@@ -233,16 +261,25 @@ const processBulkEvaluation = async (files, uploadedAnswerKey) => {
     }
 
     if (resultsFileName !== "") {
-
       await filterCsv(
-        "./utils/python/storage/" + bulk_omr_output_folder_name + "/Results/" + resultsFileName, "./utils/python/storage/" + bulk_omr_output_folder_name + "/Results/Results.csv")
-      resultCSVFilePath = "./utils/python/storage/" + bulk_omr_output_folder_name + "/Results/Results.csv";
+        "./utils/python/storage/" +
+          bulk_omr_output_folder_name +
+          "/Results/" +
+          resultsFileName,
+        "./utils/python/storage/" +
+          bulk_omr_output_folder_name +
+          "/Results/Results.csv",
+      );
+      resultCSVFilePath =
+        "./utils/python/storage/" +
+        bulk_omr_output_folder_name +
+        "/Results/Results.csv";
     }
   } catch (err) {
     console.error(err);
   }
 
-  return resultCSVFilePath
+  return resultCSVFilePath;
 };
 
 async function resultSubmitPrivate(filePath, userid, testname, ansArr) {
@@ -458,7 +495,6 @@ const runPythonScript = (
   });
 };
 
-
 async function filterCsv(inputFilePath, outputFilePath) {
   const records = [];
 
@@ -467,15 +503,15 @@ async function filterCsv(inputFilePath, outputFilePath) {
     await new Promise((resolve, reject) => {
       createReadStream(inputFilePath)
         .pipe(csv())
-        .on('data', (data) => {
+        .on("data", (data) => {
           // Filter and store required columns
           records.push({
             Reg_No: data.Reg_No,
             score: data.score,
           });
         })
-        .on('end', resolve)
-        .on('error', reject);
+        .on("end", resolve)
+        .on("error", reject);
     });
   } catch (error) {
     console.error(`Error reading CSV file: ${error.message}`);
@@ -486,19 +522,18 @@ async function filterCsv(inputFilePath, outputFilePath) {
   const csvWriter = createObjectCsvWriter({
     path: outputFilePath,
     header: [
-      { id: 'Reg_No', title: 'Reg_No' },
-      { id: 'score', title: 'score' },
+      { id: "Reg_No", title: "Reg_No" },
+      { id: "score", title: "score" },
     ],
   });
 
   try {
     await csvWriter.writeRecords(records);
-    console.log('Filtered CSV file created successfully.');
+    console.log("Filtered CSV file created successfully.");
   } catch (error) {
     console.error(`Error writing CSV file: ${error.message}`);
     throw error;
   }
 }
-
 
 export default router;
